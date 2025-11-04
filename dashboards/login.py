@@ -1,148 +1,51 @@
-import os
-from platform import system
-from sys import argv, exit
+import streamlit as st
 
-from PySide6.QtGui import QColor, QPainter, QPalette, QPixmap
-from PySide6.QtWidgets import (
-    QApplication,
-    QFormLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+# INCIALIZANDO
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
-if system() == "Linux":
-    background_path = "images/login_image.png"
-elif system() == "Windows":
-    background_path = "images\\login_image.png"
+if not st.session_state.logged_in:
+    st.title("Bem-vindo ao Stock-Reparadores!")
+    st.divider()
+    st.subheader("Entre com a sua Matrícula e Senha para acessar o sistema.")
 
+    @st.dialog("ATENÇÃO:")
+    def login_validation(username_input: str, password_input: str):
+        correct_username = "admin"
+        correct_password = "admin"
 
-class LoginWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setFixedSize(350, 280)
-        self.setAutoFillBackground(True)
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#f0f0f0"))
-        self.setPalette(palette)
-        self.setStyleSheet(
-            """
-            QLineEdit {
-                padding: 12px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                font-size: 14px;
-                color: white;
-                min-height: 20px;
-            }
-            QPushButton {
-                padding: 10px;
-                border: none;
-                border-radius: 8px;
-                background-color: #18702D;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                text-decoration: underline;
-                background-color: #154722;
-            }
-            QLabel {
-                color: #333;
-                font-size: 14px;
-            }
-        """
+        if not username_input.replace(" ", "") or not password_input.replace(" ", ""):
+            st.error("Por favor, preencha os campos solicitados.")
+        elif username_input == correct_username and password_input == correct_password:
+            st.session_state.logged_in = True
+            st.rerun()
+        else:
+            st.error("erro desconhecido. digite novamente")
+
+    with st.form("sign_in"):
+        username = st.text_input("Matrícula")
+        password = st.text_input("Senha", type="password")
+
+        submit_button = st.form_submit_button(
+            label="Entrar", type="primary", use_container_width=True
         )
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(20)
+        col1, col2, col3 = st.columns(3)
 
-        form_layout = QFormLayout()
-        form_layout.setSpacing(10)
+        with col1:
+            register_box = st.html(
+                '<p style=margin-top:8px; color:#154722><a href="https://www.google.com.br/?hl=pt-BR">Solicitar Cadastro</a></p>'
+            )  # MUDE O GOOGLE PARA OUTRO SITE
+        with col2:
+            register_box = st.html(
+                '<p style=margin-top:8px; color:#154722><a href="https://www.google.com.br/?hl=pt-BR">Esqueceu a Senha?</a></p>'
+            )  # MUDE O GOOGLE PARA OUTRO SITE
+        with col3:
+            remember_me_box = st.checkbox("Lembrar Senha")
 
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Insira o seu email")
-        form_layout.addRow(QLabel("Email:"), self.email_input)
+    if submit_button:
+        login_validation(username, password)
 
-        self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Insira a sua senha")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        form_layout.addRow(QLabel("Senha:"), self.password_input)
-
-        main_layout.addLayout(form_layout)
-
-        confirm_button = QPushButton("Confirmar")
-        main_layout.addWidget(confirm_button)
-
-        forgot_password_button = QPushButton("Esqueceu a senha?")
-        forgot_password_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #18702D;
-                color: #ffffff;
-                text-align: right;
-                font-size: 14px;
-                font-weight: normal;
-            }
-            QPushButton:hover {
-                text-decoration: underline;
-                background-color: #154722;
-            }
-        """
-        )
-        register_button = QPushButton("Realizar Cadastro")
-        register_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #18702D;
-                color: #ffffff;
-                text-align: left;
-                font-size: 14px;
-                font-weight: normal;
-            }
-            QPushButton:hover {
-                text-decoration: underline;
-                background-color: #154722;
-            }
-        """
-        )
-        h_layout = QHBoxLayout()
-        h_layout.addStretch()
-        h_layout.addWidget(register_button)
-        h_layout.addWidget(forgot_password_button)
-        main_layout.addLayout(h_layout)
-
-
-class login_screen(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setAutoFillBackground(True)
-        self.login_widget = LoginWidget(self)
-        self.setWindowTitle("Bem-Vindo ao Stock-Reparadores!")
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        pixmap = QPixmap(os.path.join(os.path.dirname(__file__), background_path))
-        painter.drawPixmap(self.rect(), pixmap)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        # Center the login widget
-        x = (self.width() - self.login_widget.width()) / 2
-        y = (self.height() - self.login_widget.height()) / 2
-        self.login_widget.move(int(x), int(y))
-        self.login_widget.raise_()
-        self.update()
-
-
-if __name__ == "__main__":
-    app = QApplication(argv)
-    window = login_screen()
-    window.showMaximized()
-    exit(app.exec())
+else:
+    st.success("Login realizado com sucesso")
+    st.title("Tela Principal")
