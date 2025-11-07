@@ -1,1 +1,4 @@
 .vscode/
+*/__pycache__/
+.streamlit/secrets.toml
+.cache/temp.toml
