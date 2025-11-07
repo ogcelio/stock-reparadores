@@ -1,8 +1,13 @@
 import streamlit as st
 import base64
 import os
+import tomli_w
+import tomllib
+from auth.auth import connect_to_db, login_validation
 
-# --- CAMINHO PARA A IMAGEM DE FUNDO ---
+username = ""
+
+# --- CAMINHOS ---
 try:
     # Pega o diretório absoluto do script que está sendo executado
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +17,8 @@ except NameError:
     SCRIPT_DIR = os.getcwd()
 
 BACKGROUND_PATH = os.path.join(SCRIPT_DIR, "images", "background.png")
+DATA_PATH = os.path.join(SCRIPT_DIR, ".cache", "temp.toml")
+
 
 # --- CONFIGURAÇÃO DA IMAGEM DE FUNDO ---
 
@@ -78,47 +85,59 @@ if "logged_in" not in st.session_state:
 def login():
     st.title("Bem-vindo ao Stock-Reparadores!")
     st.divider()
-    st.subheader("Entre com a sua Matrícula e Senha para acessar o sistema.")
-
-    def login_validation(id_input: str, password_input: str):
-        correct_id = "admin"
-        correct_password = "admin"
-
-        if not id_input.replace(" ", "") or not password_input.replace(" ", ""):
-            st.error("Por favor, preencha os campos solicitados.")
-        elif id_input == correct_id and password_input == correct_password:
-            st.session_state.logged_in = True
-            st.rerun()
-        else:
-            st.error("erro desconhecido. digite novamente")
+    st.subheader("Entre com o seu Email e Senha para acessar o sistema.")
 
     with st.form("sign_in"):
-        id_input = st.text_input("Matrícula")
+        email_input = st.text_input("Email")
         password_input = st.text_input("Senha", type="password")
 
         submit_button = st.form_submit_button(
             label="Entrar", type="primary", use_container_width=True
         )
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
 
         with col1:
-            register_box = st.html(
-                '<p style=margin-top:8px; color:#154722><a href="https://www.google.com.br/?hl=pt-BR">Solicitar Cadastro</a></p>'
-            )  # MUDE O GOOGLE PARA OUTRO SITE
-        with col2:
-            register_box = st.html(
+            forgot_psswd = st.html(
                 '<p style=margin-top:8px; color:#154722><a href="https://www.google.com.br/?hl=pt-BR">Esqueceu a Senha?</a></p>'
             )  # MUDE O GOOGLE PARA OUTRO SITE
-        with col3:
+        with col2:
             remember_me_box = st.checkbox("Lembrar Senha")
 
     if submit_button:
-        login_validation(id_input, password_input)
+        if login_validation(email_input, password_input):
+            data = {"user_data": {"email": email_input}}
+            with open(DATA_PATH, "wb") as file:
+                tomli_w.dump(data, file)
+
+            st.session_state.logged_in = True
+            st.rerun()
+
+
+def get_username():
+    connection = connect_to_db()
+    if not connection:
+        return
+
+    with open(DATA_PATH, "rb") as file:
+        data = tomllib.load(file)
+
+    email = data["user_data"]["email"]
+
+    try:
+        # Usamos 'with' para garantir que o cursor feche
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM users WHERE email = %s", (email,))
+            data = cursor.fetchone()
+
+            return data[0]
+    except Exception as e:
+        st.error(f"Erro durante a consulta: {e}")
+        return
 
 
 if not st.session_state.logged_in:
     login()
 else:
-    username = "carlos"
+    username = get_username()
     st.success(f"Seja bem-vindo, {username}")
