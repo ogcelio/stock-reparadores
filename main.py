@@ -5,8 +5,6 @@ import tomli_w
 import tomllib
 from auth.auth import connect_to_db, login_validation
 
-username = ""
-
 # --- CAMINHOS ---
 try:
     # Pega o diretório absoluto do script que está sendo executado
@@ -69,11 +67,6 @@ def set_png_as_page_bg(png_file):
 # Colocando imagem no fundo
 try:
     set_png_as_page_bg(BACKGROUND_PATH)
-except FileNotFoundError:
-    st.error(f"Arquivo de imagem de fundo não encontrado em: {BACKGROUND_PATH}")
-    st.info(
-        "Verifique se o caminho está correto e se a estrutura de pastas é: [pasta_do_script]/dashboards/images/background.png"
-    )
 except Exception as e:
     st.error(f"Ocorreu um erro ao carregar a imagem: {e}")
 
@@ -85,7 +78,7 @@ if "logged_in" not in st.session_state:
 def login():
     st.title("Bem-vindo ao Stock-Reparadores!")
     st.divider()
-    st.subheader("Entre com o seu Email e Senha para acessar o sistema.")
+    st.subheader("Acesse a sua conta:")
 
     with st.form("sign_in"):
         email_input = st.text_input("Email")
