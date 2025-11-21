@@ -68,6 +68,7 @@ CREATE TABLE
     comp_id BIGINT PRIMARY KEY,
     driver_type VARCHAR(32),
     driver_code VARCHAR(32),
+    encapsulation VARCHAR(32),
     link_datasheet TEXT,
     CONSTRAINT fk_comp_id FOREIGN KEY (comp_id) REFERENCES components (id) ON DELETE CASCADE -- SE APAGAR A COMPONENTES, MEMORIAS SAO APAGADAS 
   );
