@@ -40,7 +40,7 @@ def login_validation(email_input: str, psswd_input: str):
 
             # 1. Encontre o usuário
             cursor.execute(
-                "SELECT hashed_psswd FROM users WHERE email = %s", (email_input,)
+                "SELECT hash_psswd FROM users WHERE email = %s", (email_input,)
             )
             data = cursor.fetchone()
 
