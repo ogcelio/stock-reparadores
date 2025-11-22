@@ -25,7 +25,9 @@ CREATE TABLE
     category VARCHAR(32) NOT NULL,
     manufacturer VARCHAR(128),
     quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+    minimum_quantity INT NOT NULL DEFAULT 0 CHECK (minimum_quantity >= 0), -- QUANTIDADE MINIMA PARA AVISO
     supplier_id BIGINT, -- Pode ser NULL se não souber a origem
+    link_datasheet TEXT,
     CONSTRAINT fk_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers (id) ON DELETE SET NULL -- Se apagar o fornecedor, o estoque fica 'sem fornecedor'
   );
 
@@ -47,7 +49,6 @@ CREATE TABLE
     ic_type VARCHAR(32),
     ic_code VARCHAR(32),
     encapsulation VARCHAR(32),
-    link_datasheet TEXT,
     CONSTRAINT fk_comp_id FOREIGN KEY (comp_id) REFERENCES components (id) ON DELETE CASCADE -- SE APAGAR A COMPONENTES, CIRCUITOS INTEGRADOS SAO APAGADOS 
   );
 
@@ -58,7 +59,6 @@ CREATE TABLE
     mem_type VARCHAR(32),
     mem_code VARCHAR(32),
     encapsulation VARCHAR(32),
-    link_datasheet TEXT,
     CONSTRAINT fk_comp_id FOREIGN KEY (comp_id) REFERENCES components (id) ON DELETE CASCADE -- SE APAGAR A COMPONENTES, MEMORIAS SAO APAGADAS 
   );
 
@@ -69,7 +69,6 @@ CREATE TABLE
     driver_type VARCHAR(32),
     driver_code VARCHAR(32),
     encapsulation VARCHAR(32),
-    link_datasheet TEXT,
     CONSTRAINT fk_comp_id FOREIGN KEY (comp_id) REFERENCES components (id) ON DELETE CASCADE -- SE APAGAR A COMPONENTES, MEMORIAS SAO APAGADAS 
   );
 
