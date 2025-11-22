@@ -4,18 +4,27 @@ import os
 import tomli_w
 import tomllib
 from auth.auth import connect_to_db, login_validation
+from __init__ import __init__
 
-# --- CAMINHOS ---
-try:
-    # Pega o diretório absoluto do script que está sendo executado
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    # Se estiver executando em um ambiente interativo (como um notebook)
-    # que não define __file__, use o diretório de trabalho atual.
-    SCRIPT_DIR = os.getcwd()
+__init__()
+# ARQUIVO DE CONFIGS BASICAS
+with open("config.toml", "rb") as config_file:
+    config_data = tomllib.load(config_file)
+    DATA_PATH = config_data["data_path"]
+    BACKGROUND_PATH = config_data["background_path"]
+    del config_data
 
-BACKGROUND_PATH = os.path.join(SCRIPT_DIR, "images", "background.png")
-DATA_PATH = os.path.join(SCRIPT_DIR, ".cache", "temp.toml")
+# CSS para esconder a barra lateral (o menu)
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # --- CONFIGURAÇÃO DA IMAGEM DE FUNDO ---
@@ -24,8 +33,8 @@ DATA_PATH = os.path.join(SCRIPT_DIR, ".cache", "temp.toml")
 # Função para carregar e codificar a imagem
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+        image_data = f.read()
+    return base64.b64encode(image_data).decode()
 
 
 # Definindo o comportamento da imagem de fundo
@@ -70,9 +79,15 @@ try:
 except Exception as e:
     st.error(f"Ocorreu um erro ao carregar a imagem: {e}")
 
+data = {"user_data": {"email": "", "username": "", "role": ""},
+        "login_data": {"first_login": True}}
+
 # INCIALIZANDO
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+
+    with open(DATA_PATH, "wb") as file:
+        tomli_w.dump(data, file)
 
 
 def login():
@@ -99,38 +114,29 @@ def login():
 
     if submit_button:
         if login_validation(email_input, password_input):
-            data = {"user_data": {"email": email_input}}
-            with open(DATA_PATH, "wb") as file:
-                tomli_w.dump(data, file)
+            global data
+            data["user_data"]["email"] = email_input
 
-            st.session_state.logged_in = True
-            st.rerun()
+            try:
+                connection = connect_to_db()
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT username, user_role FROM users WHERE email = %s", (email_input,))
+                    user_data = cursor.fetchone()
 
+                data["user_data"]["username"] = user_data[0]
+                data["user_data"]["role"] = user_data[1]
 
-def get_username():
-    connection = connect_to_db()
-    if not connection:
-        return
+                with open(DATA_PATH, "wb") as file:
+                    tomli_w.dump(data, file)
 
-    with open(DATA_PATH, "rb") as file:
-        data = tomllib.load(file)
-
-    email = data["user_data"]["email"]
-
-    try:
-        # Usamos 'with' para garantir que o cursor feche
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT name FROM users WHERE email = %s", (email,))
-            data = cursor.fetchone()
-
-            return data[0]
-    except Exception as e:
-        st.error(f"Erro durante a consulta: {e}")
-        return
+                st.session_state.logged_in = True
+                st.rerun()
+            except Exception as e:
+                st.error(f"Erro ao tentar salvar os dados: {e}")
 
 
 if not st.session_state.logged_in:
     login()
 else:
-    username = get_username()
-    st.success(f"Seja bem-vindo, {username}")
+    st.switch_page("pages/Tela_Principal.py")
