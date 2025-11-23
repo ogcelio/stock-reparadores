@@ -7,7 +7,7 @@ from email_validator import validate_email, EmailNotValidError
 
 def validate(email: str):
     try:
-        email_info = validate_email(email)  # validate and get email info
+        validate_email(email)  # validate and get email info
         return True
     except EmailNotValidError:  # catch invalid emails
         st.error("Email inválido.")
