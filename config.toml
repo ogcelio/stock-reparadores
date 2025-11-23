@@ -1,5 +1,3 @@
-background_path = "/home/synthyaga/.bd/stock-reparadores/images/background.png"
-data_path = "/home/synthyaga/.bd/stock-reparadores/.cache/temp.toml"
 
 [table_names]
 Capacitor = "capacitors"
