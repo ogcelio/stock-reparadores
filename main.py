@@ -1,10 +1,10 @@
 import streamlit as st
 import base64
-import os
 import tomli_w
 import tomllib
 from auth.auth import connect_to_db, login_validation
 from __init__ import __init__
+
 
 __init__()
 # ARQUIVO DE CONFIGS BASICAS
@@ -12,19 +12,9 @@ with open("config.toml", "rb") as config_file:
     config_data = tomllib.load(config_file)
     DATA_PATH = config_data["data_path"]
     BACKGROUND_PATH = config_data["background_path"]
+    MAIN_PAGE_PATH = config_data["main_page_path"]
+    COMP_PAGE_PATH = config_data["comp_page_path"]
     del config_data
-
-# CSS para esconder a barra lateral (o menu)
-st.markdown(
-    """
-    <style>
-        [data-testid="stSidebar"] {
-            display: none;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 
 # --- CONFIGURAÇÃO DA IMAGEM DE FUNDO ---
@@ -79,8 +69,10 @@ try:
 except Exception as e:
     st.error(f"Ocorreu um erro ao carregar a imagem: {e}")
 
-data = {"user_data": {"email": "", "username": "", "role": ""},
-        "login_data": {"first_login": True}}
+data = {
+    "user_data": {"email": "", "username": "", "role": ""},
+    "login_data": {"first_login": True},
+}
 
 # INCIALIZANDO
 if "logged_in" not in st.session_state:
@@ -121,7 +113,9 @@ def login():
                 connection = connect_to_db()
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT username, user_role FROM users WHERE email = %s", (email_input,))
+                        "SELECT username, user_role FROM users WHERE email = %s",
+                        (email_input,),
+                    )
                     user_data = cursor.fetchone()
 
                 data["user_data"]["username"] = user_data[0]
@@ -139,4 +133,4 @@ def login():
 if not st.session_state.logged_in:
     login()
 else:
-    st.switch_page("pages/Tela_Principal.py")
+    st.navigation([MAIN_PAGE_PATH]).run()
