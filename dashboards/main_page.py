@@ -83,10 +83,12 @@ else:
                 table["ID"].append(component[1])
                 table["Quantidade"].append(component[2])
                 table["Fornecedor"].append(component[3])
-                # TOMAR CUIDADO COM SQL INJECTION
-                cursor.execute(
-                    f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = {component[1]}"
+
+                comp_id = component[1]
+                sql_search = (
+                    f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = %s"
                 )
+                cursor.execute(sql_search, (comp_id,))
                 component_data = cursor.fetchone()
 
                 name = f"{component[0]} "
