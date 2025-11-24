@@ -51,58 +51,64 @@ elif role == "admin":
 
 pg = st.navigation(pages, position="top")
 
-# --- Conteúdo Normal da Página ---
-st.set_page_config(layout="wide")
-st.title("Dashboard Principal")
+if pg.title == "Seus Componentes":
+    st.navigation([COMP_PAGE_PATH]).run()
+elif pg.title == "Usuários":
+    st.navigation([USERS_PAGE_PATH]).run()
+elif pg.title == "Gerenciar Conta":
+    st.navigation([MY_ACCOUNT_PAGE_PATH]).run()
+else:
+    # --- Conteúdo Normal da Página ---
+    st.set_page_config(layout="wide")
+    st.title("Dashboard Principal")
 
-if data["login_data"]["first_login"]:
-    st.success(f"Bem-Vindo, {data['user_data']['username']}.")
+    if data["login_data"]["first_login"]:
+        st.success(f"Bem-Vindo, {data['user_data']['username']}.")
 
-    with open(DATA_PATH, "wb") as file:
-        data["login_data"]["first_login"] = False
-        tomli_w.dump(data, file)
+        with open(DATA_PATH, "wb") as file:
+            data["login_data"]["first_login"] = False
+            tomli_w.dump(data, file)
 
-
-# CRIANDO TABELA DE COMPONENTES EM BAIXA QUANTIDADE
-connection = connect_to_db()
-with connection.cursor() as cursor:
-    cursor.execute(
-        "SELECT C.category, C.id, C.quantity, S.supplier_name FROM components C JOIN suppliers S ON C.supplier_id = S.id WHERE C.quantity <= C.minimum_quantity"
-    )
-    collected_data = cursor.fetchall()
-
-    if collected_data:
-        table = {"ID": [], "Componente": [], "Quantidade": [], "Fornecedor": []}
-        for component in collected_data:
-            table["ID"].append(component[1])
-            table["Quantidade"].append(component[2])
-            table["Fornecedor"].append(component[3])
-
-            cursor.execute(
-                f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = {component[1]}"
-            )
-            component_data = cursor.fetchone()
-
-            name = f"{component[0]} "
-            for item in component_data[1:]:
-                name += f"{item} "
-
-            table["Componente"].append(name)
-
-        st.header("Componentes em baixa quantidade:")
-        # st.dataframe(table, hide_index=True)
-        event = st.dataframe(
-            table,
-            key="data",
-            on_select="rerun",
-            selection_mode=["single-cell"],
-            hide_index=True,
+    # CRIANDO TABELA DE COMPONENTES EM BAIXA QUANTIDADE
+    connection = connect_to_db()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT C.category, C.id, C.quantity, S.supplier_name FROM components C JOIN suppliers S ON C.supplier_id = S.id WHERE C.quantity <= C.minimum_quantity"
         )
+        collected_data = cursor.fetchall()
 
-        if event["selection"]["cells"]:
-            row = event["selection"]["cells"][0][0]
-            comp_id = table["ID"][row]
+        if collected_data:
+            table = {"ID": [], "Componente": [], "Quantidade": [], "Fornecedor": []}
+            for component in collected_data:
+                table["ID"].append(component[1])
+                table["Quantidade"].append(component[2])
+                table["Fornecedor"].append(component[3])
+                # TOMAR CUIDADO COM SQL INJECTION
+                cursor.execute(
+                    f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = {component[1]}"
+                )
+                component_data = cursor.fetchone()
 
-            st.page_link(COMP_PAGE_PATH, label="Gerenciar o componente selecionado")
+                name = f"{component[0]} "
+                for item in component_data[1:]:
+                    name += f"{item} "
 
-# FIM TABELA DE COMPONENTES EM BAIXA QUANTIDADE
+                table["Componente"].append(name)
+
+            st.header("Componentes em baixa quantidade:")
+            # st.dataframe(table, hide_index=True)
+            event = st.dataframe(
+                table,
+                key="data",
+                on_select="rerun",
+                selection_mode=["single-cell"],
+                hide_index=True,
+            )
+
+            if event["selection"]["cells"]:
+                row = event["selection"]["cells"][0][0]
+                comp_id = table["ID"][row]
+
+                st.page_link(COMP_PAGE_PATH, label="Gerenciar o componente selecionado")
+
+    # FIM TABELA DE COMPONENTES EM BAIXA QUANTIDADE
