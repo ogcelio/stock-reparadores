@@ -47,7 +47,7 @@ def set_png_as_page_bg(png_file):
     }}
 
     /* 3. Tornar Header e Sidebar transparentes */
-    [data-testid="stSidebar"], [data-testid="stHeader"] {{
+    [data-testid="stHeader"] {{
         background-color: transparent;
     }}
 
