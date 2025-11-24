@@ -2,7 +2,7 @@ import streamlit as st
 import tomllib
 import tomli_w
 from auth.auth import connect_to_db
-from time import sleep
+
 
 # --- PROTETOR DA PAGINA ---
 if not st.session_state.get("logged_in", False):
