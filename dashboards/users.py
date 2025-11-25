@@ -191,21 +191,21 @@ else:
 
     st.subheader("Adicionar usuário")
     name = st.text_input(
-        label="* Digite o nome do usuário:",
+        label="Digite o nome do usuário: *",
         max_chars=128,
     )
-    email = st.text_input(label="* Digite o Email do Usuário:", max_chars=128)
+    email = st.text_input(label="Digite o Email do Usuário: *", max_chars=128)
     # [TODO] ISSO SERA ALTERADO EM UM MOMENTO POSTERIOR:
     #   O USUARIO DEVERA RECEBER UMA SENHA GENERICA E DEFINIR UMA NO PRIMEIRO LOGIN
-    psswd = st.text_input(label="* Digite uma Senha para o Usuário:", max_chars=255)
-    phone = st.text_input(label="Digite o Número de telefone do Usuário")
+    psswd = st.text_input(label="Digite uma Senha para o Usuário: *", max_chars=255)
+    phone = st.text_input(label="Digite o Número de telefone do Usuário:")
     user_role = st.radio(
-        label="* Selecione a Função do Usuário:",
+        label="Selecione a Função do Usuário: *",
         options=("Funcionário", "Administrador"),
     )
-    st.write("Todas as opções que começam com * devem ser preenchidas/selecionadas.")
+    st.write("Todas as opções terminadas com * devem ser preenchidas/selecionadas.")
     yes_button = st.button(
-        "Adicionar Usuário.",
+        "Adicionar Usuário",
         type="primary",
         on_click=lambda: add_user(name, email, psswd, user_role, phone),
     )
