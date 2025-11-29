@@ -16,7 +16,7 @@ def __init__() -> None:
     DATA_PATH = join(SCRIPT_DIR, ".cache", "temp.toml")
     MAIN_PAGE_PATH = join(SCRIPT_DIR, "dashboards", "main_page.py")
     COMP_PAGE_PATH = join(SCRIPT_DIR, "dashboards", "components.py")
-    MY_ACCOUNT_PAGE_PATH = join(SCRIPT_DIR, "dashboards", "my_account.py")
+    LOGOUT_PAGE_PATH = join(SCRIPT_DIR, "dashboards", "logout.py")
     USERS_PAGE_PATH = join(SCRIPT_DIR, "dashboards", "users.py")
     LOGIN_PAGE_PATH = join(SCRIPT_DIR, "main.py")
 
@@ -35,7 +35,7 @@ def __init__() -> None:
         config_data["data_path"] = DATA_PATH
         config_data["main_page_path"] = MAIN_PAGE_PATH
         config_data["comp_page_path"] = COMP_PAGE_PATH
-        config_data["my_account_page_path"] = MY_ACCOUNT_PAGE_PATH
+        config_data["logout_page_path"] = LOGOUT_PAGE_PATH
         config_data["users_page_path"] = USERS_PAGE_PATH
         config_data["login_page_path"] = LOGIN_PAGE_PATH
     except FileNotFoundError:
@@ -44,7 +44,7 @@ def __init__() -> None:
             "data_path": DATA_PATH,
             "main_page_path": MAIN_PAGE_PATH,
             "comp_page_path": COMP_PAGE_PATH,
-            "my_account_page_path": MY_ACCOUNT_PAGE_PATH,
+            "logout_page_path": LOGOUT_PAGE_PATH,
             "users_page_path": USERS_PAGE_PATH,
             "login_page_path": LOGIN_PAGE_PATH,
             "table_names": TABLE_NAMES,

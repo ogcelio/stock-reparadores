@@ -17,7 +17,7 @@ with open("config.toml", "rb") as config_file:
     DATA_PATH = config_data["data_path"]
     MAIN_PAGE_PATH = config_data["main_page_path"]
     COMP_PAGE_PATH = config_data["comp_page_path"]
-    MY_ACCOUNT_PAGE_PATH = config_data["my_account_page_path"]
+    LOGOUT_PAGE_PATH = config_data["logout_page_path"]
     USERS_PAGE_PATH = config_data["users_page_path"]
     TABLE_NAMES = config_data["table_names"]
     del config_data
@@ -34,7 +34,7 @@ if role == "employee":
             st.Page(COMP_PAGE_PATH, title="Seus Componentes"),
         ],
         "Minha Conta": [
-            st.Page(MY_ACCOUNT_PAGE_PATH, title="Gerenciar Conta"),
+            st.Page(LOGOUT_PAGE_PATH, title="Sair"),
         ],
     }
 elif role == "admin":
@@ -45,7 +45,7 @@ elif role == "admin":
             st.Page(USERS_PAGE_PATH, title="Usuários"),
         ],
         "Minha Conta": [
-            st.Page(MY_ACCOUNT_PAGE_PATH, title="Gerenciar Conta"),
+            st.Page(LOGOUT_PAGE_PATH, title="Sair"),
         ],
     }
 
@@ -55,8 +55,8 @@ if pg.title == "Seus Componentes":
     st.navigation([COMP_PAGE_PATH]).run()
 elif pg.title == "Usuários":
     st.navigation([USERS_PAGE_PATH]).run()
-elif pg.title == "Gerenciar Conta":
-    st.navigation([MY_ACCOUNT_PAGE_PATH]).run()
+elif pg.title == "Sair":
+    st.navigation([LOGOUT_PAGE_PATH]).run()
 else:
     # --- Conteúdo Normal da Página ---
     st.set_page_config(layout="wide")
@@ -107,10 +107,12 @@ else:
                 hide_index=True,
             )
 
-            if event["selection"]["cells"]:
-                row = event["selection"]["cells"][0][0]
-                comp_id = table["ID"][row]
-
-                st.page_link(COMP_PAGE_PATH, label="Gerenciar o componente selecionado")
-
     # FIM TABELA DE COMPONENTES EM BAIXA QUANTIDADE
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.page_link(COMP_PAGE_PATH, label="Gerenciar componentes no estoque")
+
+    if role == "admin":
+        with col2:
+            st.page_link(USERS_PAGE_PATH, label="Gerenciar usuários cadastrados")
