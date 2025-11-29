@@ -98,7 +98,7 @@ else:
                 table["Componente"].append(name)
 
             st.header("Componentes em baixa quantidade:")
-            # st.dataframe(table, hide_index=True)
+
             event = st.dataframe(
                 table,
                 key="data",
