@@ -17,7 +17,7 @@ with open("config.toml", "rb") as config_file:
     DATA_PATH = config_data["data_path"]
     MAIN_PAGE_PATH = config_data["main_page_path"]
     COMP_PAGE_PATH = config_data["comp_page_path"]
-    MY_ACCOUNT_PAGE_PATH = config_data["my_account_page_path"]
+    LOGOUT_PAGE_PATH = config_data["logout_page_path"]
     USERS_PAGE_PATH = config_data["users_page_path"]
     TABLE_NAMES = config_data["table_names"]
     del config_data
@@ -28,12 +28,6 @@ with open(DATA_PATH, "rb") as data_file:
     email = data["user_data"]["email"]
     role = data["user_data"]["role"]
 
-# --- PROTETOR PARA ADMS
-if role != "admin":
-    st.error("Você precisa ser administrador para ver esta página.")
-    st.warning("Redirecionando para a tela principal...")
-    st.navigation([MAIN_PAGE_PATH]).run()
-    st.stop()
 
 pages = {
     "Stock Reparadores": [
@@ -42,7 +36,7 @@ pages = {
         st.Page(USERS_PAGE_PATH, title="Usuários"),
     ],
     "Minha Conta": [
-        st.Page(MY_ACCOUNT_PAGE_PATH, title="Gerenciar Conta"),
+        st.Page(LOGOUT_PAGE_PATH, title="Sair"),
     ],
 }
 
@@ -50,8 +44,8 @@ pg = st.navigation(pages, position="top")
 
 if pg.title == "Dashboard Principal":
     st.navigation([MAIN_PAGE_PATH]).run()
-elif pg.title == "Gerenciar Conta":
-    st.navigation([MY_ACCOUNT_PAGE_PATH]).run()
+elif pg.title == "Sair":
+    st.navigation([LOGOUT_PAGE_PATH]).run()
 elif pg.title == "Usuários":
     st.navigation([USERS_PAGE_PATH]).run()
 else:
@@ -102,28 +96,103 @@ else:
 
                 table["Componente"].append(name)
 
-        event = st.dataframe(
-            table,
-            key="data",
-            on_select="rerun",
-            selection_mode=["single-cell"],
-            hide_index=True,
+    event = st.dataframe(
+        table,
+        key="data",
+        on_select="rerun",
+        selection_mode=["single-cell"],
+        hide_index=True,
+    )
+
+    def edit_comp(comp_id, qtd, min_qtd):
+        global connection
+        sql_edit = f"UPDATE components SET quantity = %s, minimum_quantity = %s WHERE id = {comp_id}"
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute(sql_edit, (qtd, min_qtd))
+                connection.commit()
+                st.success("Componente editado com sucesso.")
+            except Exception as e:
+                connection.rollback()
+                print(f"ERRO AO EDITAR O COMPONENTE: {e}")
+                st.error("Falha ao editar o componente.")
+
+    def delete_comp(comp_id):
+        global connection
+        sql_deletion = f"DELETE FROM components WHERE id = {comp_id}"
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute(sql_deletion)
+                connection.commit()
+                st.success("Componente deletado com sucesso.")
+            except Exception as e:
+                connection.rollback()
+                print(f"ERRO AO DELETAR COMPONENTE: {e}")
+                st.error("Falha ao deletar o componente.")
+
+    # SE UM COMPONENTE É SELECIONADO
+    if event["selection"]["cells"]:
+        row = event["selection"]["cells"][0][0]
+        comp_id = table["ID"][row]
+
+        edit_component_button = st.button(
+            "Editar componente selecionado", type="primary"
         )
 
-        st.write(
-            'Para deletar um componente, basta selecionar qualquer informação dele e depois clicar em "Apagar o componente selecionado".'
+        del_component_button = st.button(
+            "Deletar componente selecionado",
+            type="secondary",
+            disabled=not (role == "admin"),
         )
 
-        if event["selection"]["cells"]:
-            row = event["selection"]["cells"][0][0]
-            comp_id = table["ID"][row]
+        if del_component_button:
+            with st.form("del_form"):
+                st.warning(
+                    f"Você tem certeza que você quer deletar o componente {comp_id}? Essa é uma ação irreversível e que acarretará na perda de todos os dados deste componente."
+                )
 
-            edit_component_button = st.button(
-                "Editar componente selecionado", type="primary"
-            )
-            del_component_button = st.button(
-                "Deletar componente selecionado", type="secondary"
-            )
+                col1, col2 = st.columns(2)
+                with col1:
+                    no_button = st.form_submit_button(
+                        "Não, cancelar ação.", type="primary"
+                    )
+
+                with col2:
+                    yes_button = st.form_submit_button(
+                        "Sim, deletar componente.",
+                        type="secondary",
+                        on_click=lambda: delete_comp(comp_id),
+                    )
+
+        if edit_component_button:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"SELECT quantity, minimum_quantity FROM components WHERE id = {comp_id}"
+                )
+                qtd_data = cursor.fetchone()
+                qtd = int(qtd_data[0])
+                min_qtd = int(qtd_data[1])
+
+            col1, _ = st.columns(2)
+            with col1:
+                with st.form("edit_comp_form"):
+                    new_qtd = st.number_input(
+                        "Quantidade do componente no estoque:",
+                        min_value=0,
+                        value=qtd,
+                    )
+                    new_min_qtd = st.number_input(
+                        "Quantidade mínima para ser considerado em baixa quantidade:",
+                        min_value=0,
+                        value=min_qtd,
+                    )
+
+                    st.form_submit_button(
+                        "Salvar",
+                        on_click=lambda: edit_comp(comp_id, new_qtd, new_min_qtd),
+                        type="primary",
+                    )
+                    st.form_submit_button("Cancelar", type="primary")
 
     def add_comp(args: tuple):
         global connection
@@ -186,108 +255,120 @@ else:
                 print(f"ERRO AO ADICIONAR COMPONENTE: {e}")
                 st.error("Erro ao adicionar o componente.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        disable_add = True
-        st.subheader("Adicionar componente")
-        category = st.radio(
-            label="Selecione a categoria do componente: *",
-            options=TABLE_NAMES.keys(),
-            index=None,
+    # ADICIONAR COMPONENTE
+    if role == "admin":
+        st.write(
+            'Para deletar um componente, basta selecionar qualquer informação dele e depois clicar em "Apagar o componente selecionado".'
         )
 
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT supplier_name FROM suppliers")
-            result = cursor.fetchall()
-            suppliers = list()
-            # FORMATANDO LISTA
-            for item in result:
-                suppliers.append(item[0])
-
-        # ATRIBUTOS GERAIS
-        quantity = st.number_input(
-            "Digite a quantidade de componentes no estoque:", min_value=0
-        )
-        minimum_quantity = st.number_input(
-            'Digite a quantidade para que o componente seja considerado em "baixa quantidade":',
-            min_value=0,
-        )
-        manufacturer = st.text_input(
-            "Digite o fabricante do componente:", max_chars=128
-        )
-        supplier = st.radio(
-            label="Selecione o fornecedor do componente (Se for conhecido):",
-            options=suppliers,
-            index=None,
-        )
-        link_datasheet = st.text_input(
-            "Insira o link do datasheet do componente (Se Houver):"
-        )
-
-        general_args = [
-            category,
-            quantity,
-            minimum_quantity,
-            None if not manufacturer else manufacturer,
-            None if not supplier else supplier,
-            None if not link_datasheet else link_datasheet,
-        ]
-
-        # ATRIBUTOS ESPECIFICOS DE CADA COMPONENTE
-        specific_validation = False
-        if category:
-            encapsulation = st.text_input(
-                f"Digite o encapsulamento do componente:", max_chars=32
+        col1, _ = st.columns(2)
+        with col1:
+            disable_add = True
+            st.subheader("Adicionar componente")
+            category = st.radio(
+                label="Selecione a categoria do componente: *",
+                options=TABLE_NAMES.keys(),
+                index=None,
             )
 
-            if category == "Capacitor":
-                capacitance = st.text_input(
-                    "Digite a Capacitância (com unidade de medida): *", max_chars=32
-                )
-                max_voltage = st.text_input(
-                    "Digite a tensão máxima suportada: *", max_chars=32
-                )
-                cap_type = st.text_input("Digite o tipo do capacitor:", max_chars=32)
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT supplier_name FROM suppliers")
+                result = cursor.fetchall()
+                suppliers = list()
+                # FORMATANDO LISTA
+                for item in result:
+                    suppliers.append(item[0])
 
-                if capacitance and max_voltage:
+            # ATRIBUTOS GERAIS
+            quantity = st.number_input(
+                "Digite a quantidade de componentes no estoque:", min_value=0
+            )
+            minimum_quantity = st.number_input(
+                'Digite a quantidade para que o componente seja considerado em "baixa quantidade":',
+                min_value=0,
+            )
+            manufacturer = st.text_input(
+                "Digite o fabricante do componente:", max_chars=128
+            )
+            supplier = st.radio(
+                label="Selecione o fornecedor do componente (Se for conhecido):",
+                options=suppliers,
+                index=None,
+            )
+            link_datasheet = st.text_input(
+                "Insira o link do datasheet do componente (Se Houver):"
+            )
+
+            general_args = [
+                category,
+                quantity,
+                minimum_quantity,
+                None if not manufacturer else manufacturer,
+                None if not supplier else supplier,
+                None if not link_datasheet else link_datasheet,
+            ]
+
+            # ATRIBUTOS ESPECIFICOS DE CADA COMPONENTE
+            specific_validation = False
+            if category:
+                encapsulation = st.text_input(
+                    f"Digite o encapsulamento do componente:", max_chars=32
+                )
+
+                if category == "Capacitor":
+                    capacitance = st.text_input(
+                        "Digite a Capacitância (com unidade de medida): *", max_chars=32
+                    )
+                    max_voltage = st.text_input(
+                        "Digite a tensão máxima suportada: *", max_chars=32
+                    )
+                    cap_type = st.text_input(
+                        "Digite o tipo do capacitor:", max_chars=32
+                    )
+
+                    if capacitance and max_voltage:
+                        specific_validation = True
+
+                    specific_args = [
+                        capacitance,
+                        max_voltage,
+                        None if not cap_type else cap_type,
+                        None if not encapsulation else encapsulation,
+                    ]
+                else:
+                    comp_type = st.text_input(
+                        f"Digite o tipo do componente:", max_chars=32
+                    )
+                    comp_code = st.text_input(
+                        f"Digite o código do componente", max_chars=32
+                    )
+
                     specific_validation = True
+                    specific_args = [
+                        None if not comp_type else comp_type,
+                        None if not comp_code else comp_code,
+                        None if not encapsulation else encapsulation,
+                    ]
 
-                specific_args = [
-                    capacitance,
-                    max_voltage,
-                    None if not cap_type else cap_type,
-                    None if not encapsulation else encapsulation,
-                ]
-            else:
-                comp_type = st.text_input(f"Digite o tipo do componente:", max_chars=32)
-                comp_code = st.text_input(
-                    f"Digite o código do componente", max_chars=32
-                )
+                args = tuple(general_args + specific_args)
 
-                specific_validation = True
-                specific_args = [
-                    None if not comp_type else comp_type,
-                    None if not comp_code else comp_code,
-                    None if not encapsulation else encapsulation,
-                ]
+                if specific_validation and category:
+                    disable_add = False
+                else:
+                    disable_add = True
 
-            args = tuple(general_args + specific_args)
+            st.write(
+                "Todas as opções terminadas com * devem ser preenchidas/selecionadas."
+            )
 
-            if specific_validation and category:
-                disable_add = False
-            else:
+            yes_button = st.button(
+                "Adicionar componente",
+                type="primary",
+                disabled=disable_add,
+            )
+
+            # DANDO TEMPO DO RERUN DA INTERFACE
+            if yes_button:
                 disable_add = True
-
-        st.write("Todas as opções terminadas com * devem ser preenchidas/selecionadas.")
-
-        yes_button = st.button(
-            "Adicionar componente",
-            type="primary",
-            disabled=disable_add,
-        )
-
-        # DANDO TEMPO DO RERUN DA INTERFACE
-        if yes_button:
-            disable_add = True
-            sleep(2)
-            add_comp(args)
+                sleep(2)
+                add_comp(args)
