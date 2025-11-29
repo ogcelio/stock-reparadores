@@ -1,7 +1,0 @@
-
-[table_names]
-Capacitor = "capacitors"
-"Circuito Integrado" = "integrated_circuits"
-"Memória" = "memories"
-Driver = "drivers"
-Transistor = "transistors"
