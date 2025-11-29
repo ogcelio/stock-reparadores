@@ -17,7 +17,7 @@ with open("config.toml", "rb") as config_file:
     DATA_PATH = config_data["data_path"]
     MAIN_PAGE_PATH = config_data["main_page_path"]
     COMP_PAGE_PATH = config_data["comp_page_path"]
-    MY_ACCOUNT_PAGE_PATH = config_data["my_account_page_path"]
+    LOGOUT_PAGE_PATH = config_data["logout_page_path"]
     USERS_PAGE_PATH = config_data["users_page_path"]
     TABLE_NAMES = config_data["table_names"]
     del config_data
@@ -42,7 +42,7 @@ pages = {
         st.Page(USERS_PAGE_PATH, title="Usuários"),
     ],
     "Minha Conta": [
-        st.Page(MY_ACCOUNT_PAGE_PATH, title="Gerenciar Conta"),
+        st.Page(LOGOUT_PAGE_PATH, title="Sair"),
     ],
 }
 
@@ -52,8 +52,8 @@ if pg.title == "Seus Componentes":
     st.navigation([COMP_PAGE_PATH]).run()
 elif pg.title == "Dashboard Principal":
     st.navigation([MAIN_PAGE_PATH]).run()
-elif pg.title == "Gerenciar Conta":
-    st.navigation([MY_ACCOUNT_PAGE_PATH]).run()
+elif pg.title == "Sair":
+    st.navigation([LOGOUT_PAGE_PATH]).run()
 else:
     st.title("Usuários cadastrados no sistema:")
     connection = connect_to_db()
@@ -132,6 +132,14 @@ else:
         if not validate(email):
             all_valid = False
 
+        # CONVERTENDO E VALIDANDO USER ROLE
+        if user_role == "Funcionário":
+            user_role = "employee"
+        elif user_role == "Administrador":
+            user_role = "admin"
+        else:
+            all_valid = False
+
         # VALIDANDO TELEFONE
         if phone:
             for digit in phone:
@@ -197,8 +205,6 @@ else:
             max_chars=128,
         )
         email = st.text_input(label="Digite o Email do Usuário: *", max_chars=128)
-        # [TODO] ISSO SERA ALTERADO EM UM MOMENTO POSTERIOR:
-        #   O USUARIO DEVERA RECEBER UMA SENHA GENERICA E DEFINIR UMA NO PRIMEIRO LOGIN
         psswd = st.text_input(label="Digite uma Senha para o Usuário: *", max_chars=255)
         phone = st.text_input(label="Digite o Número de telefone do Usuário:")
         user_role = st.radio(
