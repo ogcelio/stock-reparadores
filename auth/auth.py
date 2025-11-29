@@ -17,7 +17,7 @@ def validate(email: str):
 def connect_to_db():
     try:
         connection_string = st.secrets["database"]["connection_string"]
-        connection = psycopg.connect(connection_string)
+        connection = psycopg.connect(connection_string, prepare_threshold=None)
 
         return connection
     except Exception as e:
