@@ -35,8 +35,8 @@ CREATE TABLE
 CREATE TABLE
   capacitors (
     comp_id BIGINT PRIMARY KEY, -- ID DO COMPONENTE
-    capacitance VARCHAR(32) NOT NULL, -- MICRO FARADAY
-    max_voltage VARCHAR(32) NOT NULL, -- VOLTS
+    capacitance VARCHAR(32) NOT NULL,
+    max_voltage VARCHAR(32) NOT NULL,
     cap_type VARCHAR(32),
     encapsulation VARCHAR(32),
     CONSTRAINT fk_comp_id FOREIGN KEY (comp_id) REFERENCES components (id) ON DELETE CASCADE -- SE APAGAR A COMPONENTES, CAPACITORES SAO APAGADOS 
