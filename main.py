@@ -13,7 +13,6 @@ with open("config.toml", "rb") as config_file:
     DATA_PATH = config_data["data_path"]
     BACKGROUND_PATH = config_data["background_path"]
     MAIN_PAGE_PATH = config_data["main_page_path"]
-    COMP_PAGE_PATH = config_data["comp_page_path"]
     del config_data
 
 
@@ -94,15 +93,6 @@ def login():
         submit_button = st.form_submit_button(
             label="Entrar", type="primary", use_container_width=True
         )
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            forgot_psswd = st.html(
-                '<p style=margin-top:8px; color:#154722><a href="https://www.google.com.br/?hl=pt-BR">Esqueceu a Senha?</a></p>'
-            )  # MUDE O GOOGLE PARA OUTRO SITE
-        with col2:
-            remember_me_box = st.checkbox("Lembrar Senha")
 
     if submit_button:
         if login_validation(email_input, password_input):
