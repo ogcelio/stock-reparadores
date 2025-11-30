@@ -18,7 +18,7 @@ Visando a compatibilidade com os mais variados sistemas operacionais, o arquivo 
 
 ## Teste Online
 
-Para testar o Stock Reparadores de forma online, você pode acessar o link ativo pelo Streamlit Community Cloud do [Stock Reparadores]().
+Para testar o Stock Reparadores de forma online, você pode acessar o link ativo pelo Streamlit Community Cloud do [Stock Reparadores](https://stock-reparadores.streamlit.app/).
 
 ## Teste Local
 
