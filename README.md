@@ -18,11 +18,17 @@ Visando a compatibilidade com os mais variados sistemas operacionais, o arquivo 
 
 ## Teste Online
 
-Para testar o Stock Reparadores de forma online, você pode acessar o link ativo pelo Streamlit Community Cloud do [Stock Reparadores](https://stock-reparadores.streamlit.app/).
+Para testar o Stock Reparadores de forma online, você pode acessar o link ativo pelo Streamlit Community Cloud do [Stock Reparadores](https://stock-reparadores.streamlit.app/). Atualmente, o aplicativo nesse link ativo apresenta lentidão, portanto, considere executar o aplicativo localmente.
 
 ## Teste Local
 
-Para testar o Stock Reparadores de forma local, primeiramente você deve instalar as bibliotecas contidas no arquivo [`requirements.txt`](requirements.txt). Recomendamos que seja utilizado um ambiente virtual, utilizando - por exemplo - o módulo [venv](https://docs.python.org/3/library/venv.html), e instalar os pré-requisitos utilizando o seguinte comando:
+Para testar o Stock Reparadores de forma local, primeiramente você deve clonar o repositório do projeto com o comando:
+
+```bash
+git clone https://github.com/ogcelio/stock-reparadores.git
+```
+
+Depois de clonar, você deve instalar as bibliotecas contidas no arquivo [`requirements.txt`](requirements.txt). Recomendamos que seja utilizado um ambiente virtual, utilizando - por exemplo - o módulo [venv](https://docs.python.org/3/library/venv.html), e instalar os pré-requisitos utilizando o seguinte comando:
 
 ```bash
 pip install -r requirements.txt
@@ -34,6 +40,12 @@ Tendo o banco de dados criado, deve-se criar um arquivo chamado "secrets.toml" d
 ```toml
 [database]
 connection_string = "minha-connection-string"
+```
+
+Com a Connection String configurada, basta executar o seguinte comando em um emulador de terminal aberta na página do projeto:
+
+```bash
+streamlit run main.py
 ```
 
 **Dica: A Connection String do PostgreSQL geralmente começa com _postgresql://_ .**
