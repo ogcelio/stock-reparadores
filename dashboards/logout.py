@@ -1,15 +1,20 @@
 import streamlit as st
 import tomli_w
-import tomllib
+from common.funcs import import_data
 
 st.session_state.logged_in = False
 
-with open("config.toml", "rb") as config_file:
-    config_data = tomllib.load(config_file)
-    DATA_PATH = config_data["data_path"]
-    LOGIN_PAGE_PATH = config_data["login_page_path"]
-    del config_data
-
+# DADOS E PATHS BASICOS
+(
+    DATA_PATH,
+    BACKGROUND_PATH,
+    MAIN_PAGE_PATH,
+    COMP_PAGE_PATH,
+    LOGOUT_PAGE_PATH,
+    USERS_PAGE_PATH,
+    LOGIN_PAGE_PATH,
+    TABLE_NAMES,
+) = import_data()
 
 data = {
     "user_data": {"email": "", "username": "", "role": ""},

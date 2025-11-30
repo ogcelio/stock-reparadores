@@ -2,7 +2,7 @@ import streamlit as st
 import tomllib
 import tomli_w
 from auth.auth import connect_to_db, validate, hash_psswd
-
+from common.funcs import import_data, navigation_pages
 
 # --- PROTETOR DA PAGINA ---
 if not st.session_state.get("logged_in", False):
@@ -11,16 +11,17 @@ if not st.session_state.get("logged_in", False):
     st.switch_page("main.py")
     st.stop()
 
-# ARQUIVO DE CONFIGS BASICAS
-with open("config.toml", "rb") as config_file:
-    config_data = tomllib.load(config_file)
-    DATA_PATH = config_data["data_path"]
-    MAIN_PAGE_PATH = config_data["main_page_path"]
-    COMP_PAGE_PATH = config_data["comp_page_path"]
-    LOGOUT_PAGE_PATH = config_data["logout_page_path"]
-    USERS_PAGE_PATH = config_data["users_page_path"]
-    TABLE_NAMES = config_data["table_names"]
-    del config_data
+# DADOS E PATHS BASICOS
+(
+    DATA_PATH,
+    BACKGROUND_PATH,
+    MAIN_PAGE_PATH,
+    COMP_PAGE_PATH,
+    LOGOUT_PAGE_PATH,
+    USERS_PAGE_PATH,
+    LOGIN_PAGE_PATH,
+    TABLE_NAMES,
+) = import_data()
 
 # COLETANDO INFO SOBRE O USUARIO
 with open(DATA_PATH, "rb") as data_file:
@@ -35,16 +36,10 @@ if role != "admin":
     st.navigation([MAIN_PAGE_PATH]).run()
     st.stop()
 
-pages = {
-    "Stock Reparadores": [
-        st.Page(MAIN_PAGE_PATH, title="Dashboard Principal"),
-        st.Page(COMP_PAGE_PATH, title="Seus Componentes"),
-        st.Page(USERS_PAGE_PATH, title="Usuários"),
-    ],
-    "Minha Conta": [
-        st.Page(LOGOUT_PAGE_PATH, title="Sair"),
-    ],
-}
+# PAGINAS DO MENU SUPERIOR (OU LATERAL NO MOBILE)
+pages = navigation_pages(
+    role, MAIN_PAGE_PATH, COMP_PAGE_PATH, LOGOUT_PAGE_PATH, USERS_PAGE_PATH
+)
 
 pg = st.navigation(pages, position="top")
 
@@ -57,24 +52,30 @@ elif pg.title == "Sair":
 else:
     st.title("Usuários cadastrados no sistema:")
 
-    # CRIANDO TABELA DE USERS
     connection = connect_to_db()
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT username, email, user_role FROM users")
-        db_users = cursor.fetchall()
 
-    users = {"Nome": [], "Email": [], "Função": []}
+    # CRIANDO TABELA DE USERS
+    def users_table():
+        global connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT username, email, user_role FROM users")
+            db_users = cursor.fetchall()
 
-    for user in db_users:
-        users["Nome"].append(user[0])
-        users["Email"].append(user[1])
-        if user[2] == "admin":
-            users["Função"].append("Administrador")
-        elif user[2] == "employee":
-            users["Função"].append("Empregado")
-        else:
-            users["Função"].append(user[2])
+        users = {"Nome": [], "Email": [], "Função": []}
 
+        for user in db_users:
+            users["Nome"].append(user[0])
+            users["Email"].append(user[1])
+            if user[2] == "admin":
+                users["Função"].append("Administrador")
+            elif user[2] == "employee":
+                users["Função"].append("Empregado")
+            else:
+                users["Função"].append(user[2])
+
+        return users
+
+    users = users_table()
     event = st.dataframe(
         users,
         key="data",

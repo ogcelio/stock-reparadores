@@ -1,25 +1,28 @@
 import streamlit as st
 import base64
 import tomli_w
-import tomllib
 from auth.auth import connect_to_db, login_validation
 from __init__ import __init__
-
+from common.funcs import import_data
 
 __init__()
-# COLETANDO CAMINHOS DE CADA ARQUIVO NECESSARIO
-with open("config.toml", "rb") as config_file:
-    config_data = tomllib.load(config_file)
-    DATA_PATH = config_data["data_path"]
-    BACKGROUND_PATH = config_data["background_path"]
-    MAIN_PAGE_PATH = config_data["main_page_path"]
-    del config_data
-
+# DADOS E PATHS BASICOS
+(
+    DATA_PATH,
+    BACKGROUND_PATH,
+    MAIN_PAGE_PATH,
+    COMP_PAGE_PATH,
+    LOGOUT_PAGE_PATH,
+    USERS_PAGE_PATH,
+    LOGIN_PAGE_PATH,
+    TABLE_NAMES,
+) = import_data()
 
 # --- CONFIGURACAO DA IMAGEM DE FUNDO ---
 
 
 # FUNCAO PARA CODIFICAR A IMAGEM DE FUNDO
+@st.cache_resource
 def get_base64(bin_file):
     with open(bin_file, "rb") as f:
         image_data = f.read()
@@ -27,6 +30,7 @@ def get_base64(bin_file):
 
 
 # FUNCAO PARA CRIAR E DEFINIR O COMPORTAMENDO DA IMAGEM DE FUNDO
+@st.cache_resource
 def set_background(png_file):
     bin_str = get_base64(png_file)
     page_bg_img = f"""
@@ -73,8 +77,35 @@ if "logged_in" not in st.session_state:
         tomli_w.dump(data, file)
 
 
-# FUNCAO PARA CRIAR OS WIDGETS DE LOGIN
 def login():
+    if login_validation(email_input, password_input):
+        global data
+        data["user_data"]["email"] = email_input
+
+        try:
+            connection = connect_to_db()
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT username, user_role FROM users WHERE email = %s",
+                    (email_input,),
+                )
+                user_data = cursor.fetchone()
+
+            data["user_data"]["username"] = user_data[0]
+            data["user_data"]["role"] = user_data[1]
+
+            with open(DATA_PATH, "wb") as file:
+                tomli_w.dump(data, file)
+
+            st.session_state.logged_in = True
+            st.rerun()
+        except Exception as e:
+            print(f"ERRO AO SALVAR OS DADOS: {e}")
+            st.error(f"Erro ao salvar os dados. Tente novamente.")
+
+
+# TESTE SE LOGIN FOI CONCLUIDO
+if not st.session_state.logged_in:
     st.title("Bem-vindo ao Stock-Reparadores!")
     st.divider()
     st.subheader("Acesse a sua conta:")
@@ -88,33 +119,6 @@ def login():
         )
 
     if submit_button:
-        if login_validation(email_input, password_input):
-            global data
-            data["user_data"]["email"] = email_input
-
-            try:
-                connection = connect_to_db()
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT username, user_role FROM users WHERE email = %s",
-                        (email_input,),
-                    )
-                    user_data = cursor.fetchone()
-
-                data["user_data"]["username"] = user_data[0]
-                data["user_data"]["role"] = user_data[1]
-
-                with open(DATA_PATH, "wb") as file:
-                    tomli_w.dump(data, file)
-
-                st.session_state.logged_in = True
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao tentar salvar os dados: {e}")
-
-
-# TESTE SE LOGIN FOI CONCLUIDO
-if not st.session_state.logged_in:
-    login()
+        login()
 else:
     st.navigation([MAIN_PAGE_PATH]).run()

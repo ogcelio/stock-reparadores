@@ -2,9 +2,11 @@ import tomli_w
 import tomllib
 from os.path import dirname, join, abspath
 from os import getcwd
+import streamlit as st
 
 
 # DEFININDO PATHS
+@st.cache_resource
 def __init__() -> None:
     try:
         # CAMINHO PARA DESKTOP CONVENCIONAL

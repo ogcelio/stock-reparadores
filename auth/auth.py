@@ -6,6 +6,7 @@ from email_validator import validate_email, EmailNotValidError
 
 
 # FUNCAO PARA VALIDAR EMAILS
+@st.cache_data
 def validate(email: str):
     try:
         validate_email(email)
@@ -16,6 +17,7 @@ def validate(email: str):
 
 
 # FUNCAO PARA CRIAR UMA CONEXAO COM O BD
+@st.cache_resource
 def connect_to_db():
     try:
         connection_string = st.secrets["database"]["connection_string"]
@@ -27,6 +29,7 @@ def connect_to_db():
 
 
 # FUNCAO PARA REALIZAR O LOGIN DO USER
+@st.cache_data
 def login_validation(email_input: str, psswd_input: str):
     if not validate(email_input):
         return False
@@ -36,26 +39,24 @@ def login_validation(email_input: str, psswd_input: str):
         return False
 
     try:
-        # Usamos 'with' para garantir que o cursor feche
         with connection.cursor() as cursor:
-
-            # 1. Encontre o usuário
+            # PESQUISANDO A SENHA DO USER
             cursor.execute(
                 "SELECT hash_psswd FROM users WHERE email = %s", (email_input,)
             )
             data = cursor.fetchone()
 
             if data:
-                # 2. Usuário encontrado, pegar o hash salvo
+                # COLETANDO A SENHA
                 stored_hashed_password = data[0].encode("utf-8")
                 password_bytes = psswd_input.encode("utf-8")
 
-                # 3. Verificar a senha digitada contra o hash salvo
+                # COMPARANDO A SENHA
                 if bcrypt.checkpw(password_bytes, stored_hashed_password):
-                    return True  # Senha correta!
+                    return True  # CORRETO
 
             st.error("Email ou Senha incorretos.")
-            return False  # Usuário não encontrado ou senha incorreta
+            return False
 
     except Exception as e:
         st.error(f"Erro durante a verificação: {e}")
@@ -63,5 +64,6 @@ def login_validation(email_input: str, psswd_input: str):
 
 
 # FUNCAO PARA CRIAR O HASH DAS SENHAS
+@st.cache_data
 def hash_psswd(psswd: str):
     return Hasher().hash(password=psswd)

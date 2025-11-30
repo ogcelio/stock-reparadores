@@ -1,7 +1,7 @@
 import streamlit as st
 import tomllib
-import tomli_w
 from auth.auth import connect_to_db
+from common.funcs import import_data, navigation_pages
 from time import sleep
 
 # --- PROTETOR DA PAGINA ---
@@ -11,16 +11,17 @@ if not st.session_state.get("logged_in", False):
     st.switch_page("main.py")
     st.stop()
 
-# ARQUIVO DE CONFIGS BASICAS
-with open("config.toml", "rb") as config_file:
-    config_data = tomllib.load(config_file)
-    DATA_PATH = config_data["data_path"]
-    MAIN_PAGE_PATH = config_data["main_page_path"]
-    COMP_PAGE_PATH = config_data["comp_page_path"]
-    LOGOUT_PAGE_PATH = config_data["logout_page_path"]
-    USERS_PAGE_PATH = config_data["users_page_path"]
-    TABLE_NAMES = config_data["table_names"]
-    del config_data
+# DADOS E PATHS BASICOS
+(
+    DATA_PATH,
+    BACKGROUND_PATH,
+    MAIN_PAGE_PATH,
+    COMP_PAGE_PATH,
+    LOGOUT_PAGE_PATH,
+    USERS_PAGE_PATH,
+    LOGIN_PAGE_PATH,
+    TABLE_NAMES,
+) = import_data()
 
 # COLETANDO INFO SOBRE O USUARIO
 with open(DATA_PATH, "rb") as data_file:
@@ -28,17 +29,10 @@ with open(DATA_PATH, "rb") as data_file:
     email = data["user_data"]["email"]
     role = data["user_data"]["role"]
 
-
-pages = {
-    "Stock Reparadores": [
-        st.Page(MAIN_PAGE_PATH, title="Dashboard Principal"),
-        st.Page(COMP_PAGE_PATH, title="Seus Componentes"),
-        st.Page(USERS_PAGE_PATH, title="Usuários"),
-    ],
-    "Minha Conta": [
-        st.Page(LOGOUT_PAGE_PATH, title="Sair"),
-    ],
-}
+# PAGINAS DO MENU SUPERIOR (OU LATERAL NO MOBILE)
+pages = navigation_pages(
+    role, MAIN_PAGE_PATH, COMP_PAGE_PATH, LOGOUT_PAGE_PATH, USERS_PAGE_PATH
+)
 
 pg = st.navigation(pages, position="top")
 
@@ -49,60 +43,51 @@ elif pg.title == "Sair":
 elif pg.title == "Usuários":
     st.navigation([USERS_PAGE_PATH]).run()
 else:
-    # --- Conteúdo Normal da Página ---
-    st.title("Componentes cadastrados")
+    # COLETANDO COMPONENTES
+    def component_table():
+        global connection
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT C.category, C.id, C.quantity, C.manufacturer, C.link_datasheet FROM components C"
+            )
+            collected_data = cursor.fetchall()
 
-    # CRIANDO TABELA DE COMPONENTES
-    connection = connect_to_db()
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT C.category, C.id, C.quantity, C.manufacturer, C.link_datasheet FROM components C"
-        )
-        collected_data = cursor.fetchall()
+            if collected_data:
+                table = {
+                    "ID": [],
+                    "Componente": [],
+                    "Quantidade": [],
+                    "Fabricante": [],
+                    "Datasheet": [],
+                }
+                for component in collected_data:
+                    table["ID"].append(component[1])
+                    table["Quantidade"].append(component[2])
+                    if component[3]:
+                        table["Fabricante"].append(component[3])
+                    else:
+                        table["Fabricante"].append("Desconhecido.")
 
-        if collected_data:
-            table = {
-                "ID": [],
-                "Componente": [],
-                "Quantidade": [],
-                "Fabricante": [],
-                "Datasheet": [],
-            }
-            for component in collected_data:
-                table["ID"].append(component[1])
-                table["Quantidade"].append(component[2])
-                if component[3]:
-                    table["Fabricante"].append(component[3])
-                else:
-                    table["Fabricante"].append("Desconhecido.")
+                    if component[4]:
+                        table["Datasheet"].append(component[4])
+                    else:
+                        table["Datasheet"].append("Não Registrado.")
 
-                if component[4]:
-                    table["Datasheet"].append(component[4])
-                else:
-                    table["Datasheet"].append("Não Registrado.")
+                    comp_id = component[1]
+                    sql_search = (
+                        f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = %s"
+                    )
+                    cursor.execute(sql_search, (comp_id,))
 
-                comp_id = component[1]
-                sql_search = (
-                    f"SELECT * FROM {TABLE_NAMES[component[0]]} WHERE comp_id = %s"
-                )
-                cursor.execute(sql_search, (comp_id,))
+                    component_data = cursor.fetchone()
 
-                component_data = cursor.fetchone()
+                    name = f"{component[0]} "
+                    for item in component_data[1:]:
+                        if item:
+                            name += f"{item} "
 
-                name = f"{component[0]} "
-                for item in component_data[1:]:
-                    if item:
-                        name += f"{item} "
-
-                table["Componente"].append(name)
-
-    event = st.dataframe(
-        table,
-        key="data",
-        on_select="rerun",
-        selection_mode=["single-cell"],
-        hide_index=True,
-    )
+                    table["Componente"].append(name)
+        return table
 
     # FUNCAO DE EDITAR COMPONENTE
     def edit_comp(comp_id, qtd, min_qtd):
@@ -194,15 +179,8 @@ else:
                 print(f"ERRO AO ADICIONAR COMPONENTE: {e}")
                 st.error("Erro ao adicionar o componente.")
 
-    # SE UM COMPONENTE É SELECIONADO
-    if event["selection"]["cells"]:
-        row = event["selection"]["cells"][0][0]
-        comp_id = table["ID"][row]
-
-        edit_component_button = st.button(
-            "Editar componente selecionado", type="primary"
-        )
-
+    # FORMULARIO DE DELETAR COMPONENTE
+    def del_comp_form():
         del_component_button = st.button(
             "Deletar componente selecionado",
             type="secondary",
@@ -228,6 +206,11 @@ else:
                         on_click=lambda: delete_comp(comp_id),
                     )
 
+    # FORMULARIO DE EDITAR COMPONENTE
+    def edit_comp_form():
+        edit_component_button = st.button(
+            "Editar componente selecionado", type="primary"
+        )
         if edit_component_button:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -258,12 +241,9 @@ else:
                     )
                     st.form_submit_button("Cancelar", type="primary")
 
-    # ADICIONAR COMPONENTE
-    if role == "admin":
-        st.write(
-            'Para deletar um componente, basta selecionar qualquer informação dele e depois clicar em "Apagar o componente selecionado".'
-        )
-
+    # FORMULARIO DE ADICIONAR COMPONENTE
+    def add_comp_form():
+        global connection
         col1, _ = st.columns(2)
         with col1:
             disable_add = True
@@ -375,3 +355,33 @@ else:
                 disable_add = True
                 sleep(2)
                 add_comp(args)
+
+    # --- CONTEUDO NORMAL DA PAGINA ---
+    st.title("Componentes cadastrados")
+    connection = connect_to_db()
+
+    table = component_table()
+    event = st.dataframe(
+        table,
+        key="data",
+        on_select="rerun",
+        selection_mode=["single-cell"],
+        hide_index=True,
+    )
+
+    # SE UM COMPONENTE É SELECIONADO
+    if event["selection"]["cells"]:
+        row = event["selection"]["cells"][0][0]
+        comp_id = table["ID"][row]
+
+        edit_comp_form()
+
+        del_comp_form()
+
+    # ADICIONAR COMPONENTE
+    if role == "admin":
+        st.write(
+            'Para deletar um componente, basta selecionar qualquer informação dele e depois clicar em "Apagar o componente selecionado".'
+        )
+
+        add_comp_form()
