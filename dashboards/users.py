@@ -56,6 +56,8 @@ elif pg.title == "Sair":
     st.navigation([LOGOUT_PAGE_PATH]).run()
 else:
     st.title("Usuários cadastrados no sistema:")
+
+    # CRIANDO TABELA DE USERS
     connection = connect_to_db()
     with connection.cursor() as cursor:
         cursor.execute("SELECT username, email, user_role FROM users")
@@ -84,6 +86,7 @@ else:
         'Para deletar um usuário, basta selecionar qualquer informação dele e depois clicar em "Apagar o Usuário Selecionado".'
     )
 
+    # FUNCAO PARA DELETAR USUARIO
     def delete_user() -> None:
         global connection, user_email
         try:
@@ -123,7 +126,7 @@ else:
                         on_click=delete_user,
                     )
 
-    # ALGORITMO PARA ADICIONAR USUARIO
+    # FUNCAO PARA ADICIONAR USUARIO
     def add_user(name, email, psswd, user_role, phone=None) -> None:
         global connection
 
@@ -197,6 +200,7 @@ else:
                 connection.rollback()
                 print(f"ERRO AO ADICIONAR USUARIO: {e}")
 
+    # ALGORITMO PARA ADICIONAR USUARIO
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Adicionar usuário")

@@ -7,7 +7,7 @@ from __init__ import __init__
 
 
 __init__()
-# ARQUIVO DE CONFIGS BASICAS
+# COLETANDO CAMINHOS DE CADA ARQUIVO NECESSARIO
 with open("config.toml", "rb") as config_file:
     config_data = tomllib.load(config_file)
     DATA_PATH = config_data["data_path"]
@@ -16,19 +16,19 @@ with open("config.toml", "rb") as config_file:
     del config_data
 
 
-# --- CONFIGURAÇÃO DA IMAGEM DE FUNDO ---
+# --- CONFIGURACAO DA IMAGEM DE FUNDO ---
 
 
-# Função para carregar e codificar a imagem
-def get_base64_of_bin_file(bin_file):
+# FUNCAO PARA CODIFICAR A IMAGEM DE FUNDO
+def get_base64(bin_file):
     with open(bin_file, "rb") as f:
         image_data = f.read()
     return base64.b64encode(image_data).decode()
 
 
-# Definindo o comportamento da imagem de fundo
-def set_png_as_page_bg(png_file):
-    bin_str = get_base64_of_bin_file(png_file)
+# FUNCAO PARA CRIAR E DEFINIR O COMPORTAMENDO DA IMAGEM DE FUNDO
+def set_background(png_file):
+    bin_str = get_base64(png_file)
     page_bg_img = f"""
     <style>
     /* 1. Aplicar a imagem */
@@ -40,40 +40,32 @@ def set_png_as_page_bg(png_file):
         background-attachment: fixed; /* Imagem fica fixa ao rolar */
     }}
 
-    /* 2. Tornar o contêiner de CONTEÚDO (.main) transparente */
+    /* Tornar o contêiner de CONTEÚDO (.main) transparente */
     [data-testid="stAppViewContainer"] > .main {{
         background-color: transparent;
     }}
 
-    /* 3. Tornar Header e Sidebar transparentes */
+    /* Header transparente */
     [data-testid="stHeader"] {{
         background-color: transparent;
     }}
-
-    /* 4. Opcional: Adicionar um leve fundo aos widgets para legibilidade */
-    /*
-    div[data-testid="stVerticalBlock"] div[data-testid="stExpander"] {{
-         background-color: rgba(255, 255, 255, 0.1);
-         border-radius: 10px;
-    }}
-    */
     </style>
     """
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 
-# Colocando imagem no fundo
+# COLOCANDO A IMAGEM DE FUNDO
 try:
-    set_png_as_page_bg(BACKGROUND_PATH)
+    set_background(BACKGROUND_PATH)
 except Exception as e:
     st.error(f"Ocorreu um erro ao carregar a imagem: {e}")
 
+# INCIALIZANDO
 data = {
     "user_data": {"email": "", "username": "", "role": ""},
     "login_data": {"first_login": True},
 }
 
-# INCIALIZANDO
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -81,6 +73,7 @@ if "logged_in" not in st.session_state:
         tomli_w.dump(data, file)
 
 
+# FUNCAO PARA CRIAR OS WIDGETS DE LOGIN
 def login():
     st.title("Bem-vindo ao Stock-Reparadores!")
     st.divider()
@@ -120,6 +113,7 @@ def login():
                 st.error(f"Erro ao tentar salvar os dados: {e}")
 
 
+# TESTE SE LOGIN FOI CONCLUIDO
 if not st.session_state.logged_in:
     login()
 else:

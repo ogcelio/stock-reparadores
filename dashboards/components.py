@@ -104,6 +104,7 @@ else:
         hide_index=True,
     )
 
+    # FUNCAO DE EDITAR COMPONENTE
     def edit_comp(comp_id, qtd, min_qtd):
         global connection
         sql_edit = f"UPDATE components SET quantity = %s, minimum_quantity = %s WHERE id = {comp_id}"
@@ -117,6 +118,7 @@ else:
                 print(f"ERRO AO EDITAR O COMPONENTE: {e}")
                 st.error("Falha ao editar o componente.")
 
+    # FUNCAO DE DELETAR COMPONENTE
     def delete_comp(comp_id):
         global connection
         sql_deletion = f"DELETE FROM components WHERE id = {comp_id}"
@@ -129,6 +131,68 @@ else:
                 connection.rollback()
                 print(f"ERRO AO DELETAR COMPONENTE: {e}")
                 st.error("Falha ao deletar o componente.")
+
+    # FUNCAO DE ADICIONAR COMPONENTE
+    def add_comp(args: tuple):
+        global connection
+        if args[0] == "Capacitor":
+            sql_insertion = str(
+                """
+                WITH new_comp AS (
+                INSERT INTO components (category, quantity, minimum_quantity, manufacturer, supplier_id, link_datasheet)
+                VALUES (
+                        %s, -- Categoria
+                        %s, -- Qtd Atual
+                        %s, -- Qtd Minima
+                        %s, -- Fabricante
+                        (SELECT id FROM suppliers WHERE supplier_name = %s), -- Fornecedor
+                        %s -- Link Datasheet
+                    )
+                    RETURNING id
+                )
+                INSERT INTO capacitors (comp_id, capacitance, max_voltage, cap_type, encapsulation)
+                VALUES ((SELECT id FROM new_comp), 
+                %s, -- Capacitancia
+                %s, -- Tensao Maxima 
+                %s, -- Tipo do capacitor 
+                %s -- Encapsulamento
+                )
+                """
+            )
+
+        else:
+            sql_insertion = str(
+                f"""
+                WITH new_comp AS (
+                INSERT INTO components (category, quantity, minimum_quantity, manufacturer, supplier_id, link_datasheet)
+                    VALUES (
+                        %s, -- Categoria
+                        %s, -- Qtd Atual 
+                        %s, -- Qtd Minima 
+                        %s, -- Fabricante 
+                        (SELECT id FROM suppliers WHERE supplier_name = %s), -- Fornecedor
+                        %s -- Link Datasheet
+                    )
+                    RETURNING id
+                ) 
+                INSERT INTO {TABLE_NAMES[args[0]]}
+                    VALUES ((SELECT id FROM new_comp), 
+                    %s, -- Tipo do componente
+                    %s, -- Codigo do componente 
+                    %s -- Encapsulamento
+                    );
+                """
+            )
+
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute(sql_insertion, args)
+                connection.commit()
+                st.success("Componente adicionado com sucesso.")
+            except Exception as e:
+                connection.rollback()
+                print(f"ERRO AO ADICIONAR COMPONENTE: {e}")
+                st.error("Erro ao adicionar o componente.")
 
     # SE UM COMPONENTE É SELECIONADO
     if event["selection"]["cells"]:
@@ -193,67 +257,6 @@ else:
                         type="primary",
                     )
                     st.form_submit_button("Cancelar", type="primary")
-
-    def add_comp(args: tuple):
-        global connection
-        if args[0] == "Capacitor":
-            sql_insertion = str(
-                """
-                WITH new_comp AS (
-                INSERT INTO components (category, quantity, minimum_quantity, manufacturer, supplier_id, link_datasheet)
-                VALUES (
-                        %s, -- Categoria
-                        %s, -- Qtd Atual
-                        %s, -- Qtd Minima
-                        %s, -- Fabricante
-                        (SELECT id FROM suppliers WHERE supplier_name = %s), -- Fornecedor
-                        %s -- Link Datasheet
-                    )
-                    RETURNING id
-                )
-                INSERT INTO capacitors (comp_id, capacitance, max_voltage, cap_type, encapsulation)
-                VALUES ((SELECT id FROM new_comp), 
-                %s, -- Capacitancia
-                %s, -- Tensao Maxima 
-                %s, -- Tipo do capacitor 
-                %s -- Encapsulamento
-                )
-                """
-            )
-
-        else:
-            sql_insertion = str(
-                f"""
-                WITH new_comp AS (
-                INSERT INTO components (category, quantity, minimum_quantity, manufacturer, supplier_id, link_datasheet)
-                    VALUES (
-                        %s, -- Categoria
-                        %s, -- Qtd Atual 
-                        %s, -- Qtd Minima 
-                        %s, -- Fabricante 
-                        (SELECT id FROM suppliers WHERE supplier_name = %s), -- Fornecedor
-                        %s -- Link Datasheet
-                    )
-                    RETURNING id
-                ) 
-                INSERT INTO {TABLE_NAMES[args[0]]}
-                    VALUES ((SELECT id FROM new_comp), 
-                    %s, -- Tipo do componente
-                    %s, -- Codigo do componente 
-                    %s -- Encapsulamento
-                    );
-                """
-            )
-
-        with connection.cursor() as cursor:
-            try:
-                cursor.execute(sql_insertion, args)
-                connection.commit()
-                st.success("Componente adicionado com sucesso.")
-            except Exception as e:
-                connection.rollback()
-                print(f"ERRO AO ADICIONAR COMPONENTE: {e}")
-                st.error("Erro ao adicionar o componente.")
 
     # ADICIONAR COMPONENTE
     if role == "admin":

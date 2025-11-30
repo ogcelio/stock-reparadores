@@ -19,5 +19,6 @@ data = {
 with open(DATA_PATH, "wb") as file:
     tomli_w.dump(data, file)
 
+# VOLTANDO PARA A TELA DE LOGIN
 st.set_page_config(layout="centered")
 st.navigation([LOGIN_PAGE_PATH]).run()

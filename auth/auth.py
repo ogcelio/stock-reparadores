@@ -5,27 +5,28 @@ from streamlit_authenticator import Hasher
 from email_validator import validate_email, EmailNotValidError
 
 
+# FUNCAO PARA VALIDAR EMAILS
 def validate(email: str):
     try:
-        validate_email(email)  # validate and get email info
+        validate_email(email)
         return True
-    except EmailNotValidError:  # catch invalid emails
+    except EmailNotValidError:
         st.error("Email inválido.")
         return False
 
 
+# FUNCAO PARA CRIAR UMA CONEXAO COM O BD
 def connect_to_db():
     try:
         connection_string = st.secrets["database"]["connection_string"]
         connection = psycopg.connect(connection_string, prepare_threshold=None)
-
         return connection
     except Exception as e:
         st.error(f"Erro ao tentar conexão com o banco de dados:\n {e}")
-
         return False
 
 
+# FUNCAO PARA REALIZAR O LOGIN DO USER
 def login_validation(email_input: str, psswd_input: str):
     if not validate(email_input):
         return False
@@ -61,5 +62,6 @@ def login_validation(email_input: str, psswd_input: str):
         return False
 
 
+# FUNCAO PARA CRIAR O HASH DAS SENHAS
 def hash_psswd(psswd: str):
     return Hasher().hash(password=psswd)

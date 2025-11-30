@@ -27,6 +27,7 @@ with open(DATA_PATH, "rb") as data_file:
 
 role = data["user_data"]["role"]
 
+# DIFERENCIANDO O QUE O ADMIN E O FUNCIONARIO PODEM VER
 if role == "employee":
     pages = {
         "Stock Reparadores": [
@@ -109,6 +110,7 @@ else:
 
     # FIM TABELA DE COMPONENTES EM BAIXA QUANTIDADE
 
+    # LINKS PARA OUTRAS JANELAS
     col1, col2 = st.columns(2)
     with col1:
         st.page_link(COMP_PAGE_PATH, label="Gerenciar componentes no estoque")
