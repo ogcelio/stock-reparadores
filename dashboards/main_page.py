@@ -109,7 +109,7 @@ else:
             )
 
     # FIM TABELA DE COMPONENTES EM BAIXA QUANTIDADE
-
+    st.divider()
     # LINKS PARA OUTRAS JANELAS
     col1, col2 = st.columns(2)
     with col1:
