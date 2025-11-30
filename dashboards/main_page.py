@@ -49,6 +49,12 @@ elif role == "admin":
             st.Page(LOGOUT_PAGE_PATH, title="Sair"),
         ],
     }
+else:
+    pages = {
+        "Minha Conta": [
+            st.Page(LOGOUT_PAGE_PATH, title="Sair"),
+        ],
+    }
 
 pg = st.navigation(pages, position="top")
 
