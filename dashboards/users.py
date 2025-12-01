@@ -1,15 +1,7 @@
 import streamlit as st
 import tomllib
-import tomli_w
 from auth.auth import connect_to_db, validate, hash_psswd
 from common.funcs import import_data, navigation_pages
-
-# --- PROTETOR DA PAGINA ---
-if not st.session_state.get("logged_in", False):
-    st.error("Você precisa estar logado para ver esta página.")
-    st.warning("Redirecionando para a tela de login...")
-    st.switch_page("main.py")
-    st.stop()
 
 # DADOS E PATHS BASICOS
 (

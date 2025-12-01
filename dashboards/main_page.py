@@ -4,14 +4,6 @@ import tomli_w
 from auth.auth import connect_to_db
 from common.funcs import import_data, navigation_pages
 
-# --- INÍCIO: Protetor da Página ---
-if not st.session_state.get("logged_in", False):
-    st.error("Você precisa estar logado para ver esta página.")
-    st.warning("Redirecionando para a tela de login...")
-    st.switch_page("main.py")
-    st.stop()
-# --- FIM: Protetor da Página ---
-
 # DADOS E PATHS BASICOS
 (
     DATA_PATH,
